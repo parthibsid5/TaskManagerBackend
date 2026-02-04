@@ -1,6 +1,8 @@
 package org.example.taskmanagerbackend.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 public class Task {
@@ -9,7 +11,11 @@ public class Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message="Title cannot bee empty")
+    @Size(max=100, message="title max length is 100")
     private String title;
+
+    @Size(max=500, message="Description max length is 500")
     private String description;
     private boolean completed;
 
