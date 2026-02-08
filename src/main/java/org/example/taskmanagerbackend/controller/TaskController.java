@@ -6,7 +6,7 @@ import org.example.taskmanagerbackend.repository.TaskRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/tasks")
@@ -48,18 +48,24 @@ public class TaskController {
         // PUT update task
     @PutMapping("/{id}")
 
-        public ResponseEntity<Task> updateTask(
+        public ResponseEntity<?> updateTask(
                 @PathVariable Long id,
                 @Valid @RequestBody Task updatedTask)
         {
-            Task task = taskRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Task not found"));
+            Optional<Task>  taskToEdit=taskRepository.findById(id);
+            if(taskToEdit.isEmpty()) {
+                return ResponseEntity.status(404).body("Task with id " + id + " not found");
+            }
+            else{
+            Task taskToUpdate = taskToEdit.get();
+            taskToUpdate.setTitle(updatedTask.getTitle());
+            taskToUpdate.setDescription(updatedTask.getDescription());
+            taskToUpdate.setCompleted(updatedTask.isCompleted());
 
-            task.setTitle(updatedTask.getTitle());
-            task.setDescription(updatedTask.getDescription());
-            task.setCompleted(updatedTask.isCompleted());
-
-            return ResponseEntity.ok(taskRepository.save(task));
+            // Save the updated task to the repository and return a 200 OK response
+            Task savedTask = taskRepository.save(taskToUpdate);
+            return ResponseEntity.ok(savedTask);
+            }
         }
 
     // DELETE task with check if task not found

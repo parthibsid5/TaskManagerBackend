@@ -12,10 +12,10 @@ public class Task {
     private Long id;
 
     @NotBlank(message="Title cannot bee empty")
-    @Size(max=100, message="title max length is 100")
+    @Size(min=3, max=100, message="Title length must be between 3 and  100 characters..!")
     private String title;
 
-    @Size(max=500, message="Description max length is 500")
+    @Size(max=500, message="Description cannot exceed 500 characters..!")
     private String description;
     private boolean completed;
 
