@@ -11,11 +11,12 @@ public class Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message="Title cannot bee empty")
-    @Size(min=3, max=100, message="Title length must be between 3 and  100 characters..!")
+    // no need of validation here we will do that in request class inside dto
+//    @NotBlank(message="Title cannot bee empty")
+//    @Size(min=3, max=100, message="Title length must be between 3 and  100 characters..!")
     private String title;
 
-    @Size(max=500, message="Description cannot exceed 500 characters..!")
+//    @Size(max=500, message="Description cannot exceed 500 characters..!")
     private String description;
     private boolean completed;
 

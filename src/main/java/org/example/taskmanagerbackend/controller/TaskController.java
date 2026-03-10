@@ -1,4 +1,6 @@
 package org.example.taskmanagerbackend.controller;
+import org.example.taskmanagerbackend.dto.TaskRequest;
+import org.example.taskmanagerbackend.dto.TaskResponse;
 import org.springframework.data.domain.Page;
 import jakarta.validation.Valid;
 import org.example.taskmanagerbackend.model.Task;
@@ -34,39 +36,89 @@ public class TaskController {
     }
 
     // POST new task
-    @PostMapping
-    //    public Task createTask(@RequestBody Task task) {
-//        return taskRepository.save(task);
+//    @PostMapping
+//    //    public Task createTask(@RequestBody Task task) {
+//    //        return taskRepository.save(task);
+//    //    }
+//
+//    public ResponseEntity<Task> createTask(@Valid @RequestBody Task task) {
+//        Task saved = taskRepository.save(task);
+//        return ResponseEntity.status(201).body(saved);
 //    }
 
-    public ResponseEntity<Task> createTask(@Valid @RequestBody Task task) {
+    @PostMapping
+    public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody TaskRequest request) {
+
+        Task task = new Task(
+                request.getTitle(),
+                request.getDescription(),
+                request.isCompleted()
+        );
+
         Task saved = taskRepository.save(task);
-        return ResponseEntity.status(201).body(saved);
+
+        TaskResponse response = new TaskResponse(
+                saved.getId(),
+                saved.getTitle(),
+                saved.isCompleted()
+        );
+
+        return ResponseEntity.status(201).body(response);
     }
 
 
         // PUT update task
+//    @PutMapping("/{id}")
+//
+//        public ResponseEntity<?> updateTask(
+//                @PathVariable Long id,
+//                @Valid @RequestBody Task updatedTask)
+//        {
+//            Optional<Task>  taskToEdit=taskRepository.findById(id);
+//            if(taskToEdit.isEmpty()) {
+//                return ResponseEntity.status(404).body("Task with id " + id + " not found");
+//            }
+//            else{
+//            Task taskToUpdate = taskToEdit.get();
+//            taskToUpdate.setTitle(updatedTask.getTitle());
+//            taskToUpdate.setDescription(updatedTask.getDescription());
+//            taskToUpdate.setCompleted(updatedTask.isCompleted());
+//
+//            // Save the updated task to the repository and return a 200 OK response
+//            Task savedTask = taskRepository.save(taskToUpdate);
+//            return ResponseEntity.ok(savedTask);
+//            }
+//        }
+
     @PutMapping("/{id}")
+    public ResponseEntity<TaskResponse> updateTask(
+            @PathVariable Long id,
+            @Valid @RequestBody TaskRequest request) {
 
-        public ResponseEntity<?> updateTask(
-                @PathVariable Long id,
-                @Valid @RequestBody Task updatedTask)
-        {
-            Optional<Task>  taskToEdit=taskRepository.findById(id);
-            if(taskToEdit.isEmpty()) {
-                return ResponseEntity.status(404).body("Task with id " + id + " not found");
-            }
-            else{
-            Task taskToUpdate = taskToEdit.get();
-            taskToUpdate.setTitle(updatedTask.getTitle());
-            taskToUpdate.setDescription(updatedTask.getDescription());
-            taskToUpdate.setCompleted(updatedTask.isCompleted());
+        Optional<Task> taskToEdit = taskRepository.findById(id);
 
-            // Save the updated task to the repository and return a 200 OK response
-            Task savedTask = taskRepository.save(taskToUpdate);
-            return ResponseEntity.ok(savedTask);
-            }
+        if (taskToEdit.isEmpty()) {
+            return ResponseEntity.status(404).build();
         }
+
+        Task taskToUpdate = taskToEdit.get();
+
+        taskToUpdate.setTitle(request.getTitle());
+        taskToUpdate.setDescription(request.getDescription());
+        taskToUpdate.setCompleted(request.isCompleted());
+
+        Task saved = taskRepository.save(taskToUpdate);
+
+        TaskResponse response = new TaskResponse(
+                saved.getId(),
+                saved.getTitle(),
+                saved.isCompleted()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+
 
     // DELETE task with check if task not found
     @DeleteMapping("/{id}")
