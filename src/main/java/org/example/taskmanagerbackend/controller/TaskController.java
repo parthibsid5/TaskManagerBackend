@@ -1,13 +1,18 @@
 package org.example.taskmanagerbackend.controller;
 import org.example.taskmanagerbackend.dto.TaskRequest;
 import org.example.taskmanagerbackend.dto.TaskResponse;
+import org.example.taskmanagerbackend.model.User;
+import org.example.taskmanagerbackend.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import jakarta.validation.Valid;
 import org.example.taskmanagerbackend.model.Task;
 import org.example.taskmanagerbackend.repository.TaskRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.Authenticator;
 import java.util.Optional;
 
 @RestController
@@ -16,9 +21,11 @@ import java.util.Optional;
 public class TaskController {
 
     private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
 
-    public TaskController(TaskRepository taskRepository) {
+    public TaskController(TaskRepository taskRepository, UserRepository userRepository) {
         this.taskRepository = taskRepository;
+        this.userRepository = userRepository;
     }
 
     // GET paginated tasks
@@ -28,10 +35,12 @@ public class TaskController {
 //    }
 
     public ResponseEntity<Page<Task>> getTasks(
+            Authentication authentication,
             @RequestParam(defaultValue="0") int page,
             @RequestParam(defaultValue="10") int size)
     {
-        Page<Task> task=taskRepository.findAll(PageRequest.of(page,size));
+        String email=authentication.getName();
+        Page<Task> task=taskRepository.findByUserEmail(email,PageRequest.of(page,size));
         return ResponseEntity.ok(task);
     }
 
@@ -47,7 +56,11 @@ public class TaskController {
 //    }
 
     @PostMapping
-    public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody TaskRequest request) {
+    public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody TaskRequest request,Authentication authentication) {
+
+        String email=authentication.getName();
+        User user=userRepository.findByEmail(email)
+                .orElseThrow(()-> new RuntimeException("User not found"));
 
         Task task = new Task(
                 request.getTitle(),
@@ -55,6 +68,7 @@ public class TaskController {
                 request.isCompleted()
         );
 
+        task.setUser(user);
         Task saved = taskRepository.save(task);
 
         TaskResponse response = new TaskResponse(
@@ -93,8 +107,10 @@ public class TaskController {
     @PutMapping("/{id}")
     public ResponseEntity<TaskResponse> updateTask(
             @PathVariable Long id,
-            @Valid @RequestBody TaskRequest request) {
+            @Valid @RequestBody TaskRequest request,
+            Authentication authentication) {
 
+        String email=authentication.getName();
         Optional<Task> taskToEdit = taskRepository.findById(id);
 
         if (taskToEdit.isEmpty()) {
@@ -102,6 +118,10 @@ public class TaskController {
         }
 
         Task taskToUpdate = taskToEdit.get();
+
+        if(!taskToUpdate.getUser().getEmail().equals(email)){
+            return ResponseEntity.status(403).build();
+        }
 
         taskToUpdate.setTitle(request.getTitle());
         taskToUpdate.setDescription(request.getDescription());
@@ -125,10 +145,17 @@ public class TaskController {
     //    public void deleteTask(@PathVariable Long id) {
 //        taskRepository.deleteById(id);
 //    }
-    public ResponseEntity<Void> deleteTask(@PathVariable Long id){
-        if(!taskRepository.existsById(id)) {
-            throw new RuntimeException("The task is not found!");
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id,Authentication authentication) {
+
+        String email=authentication.getName();
+        Optional<Task> taskToDelete = taskRepository.findById(id);
+        if (taskToDelete.isEmpty()) {
+            return ResponseEntity.status(404).build();
         }
+        if(!taskToDelete.get().getUser().getEmail().equals(email)){
+            return ResponseEntity.status(403).build();
+        }
+
         taskRepository.deleteById(id);
         return ResponseEntity.noContent().build();
         }

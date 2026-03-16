@@ -20,6 +20,11 @@ public class Task {
     private String description;
     private boolean completed;
 
+//    here the task table will be related to user table
+    @ManyToOne
+    @JoinColumn(name="user_id")
+    private User user;
+
     public Task() {}
 
     public Task(String title, String description, boolean completed) {
@@ -38,4 +43,12 @@ public class Task {
 
     public boolean isCompleted() { return completed; }
     public void setCompleted(boolean completed) { this.completed = completed; }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }
